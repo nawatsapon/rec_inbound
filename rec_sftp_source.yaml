@@ -1,0 +1,118 @@
+services:
+  - name: merchant_e_payment_tmn
+    right3_source:
+      sftp_source_folder: /data/raw_inbound/truemoney324495378
+      sftp_destination_folder: /data/inbound/sbm_merchant_e_payment_all
+      input_file_pattern: "truemoney324495378_YYYYMMDD.txt"
+      date_condition: TODAY-1
+      source_dest_mode: same
+      sftp_source:
+        host: cent-proxy1.vdc.co.th
+        port: 22
+        username: dsci_reconcile
+  - name: merchant_e_payment_kbankqr22
+    right4_source:
+      sftp_source_folder: /data/inbound/kbankqr22
+      sftp_destination_folder: /data/inbound/sbm_merchant_e_payment_all
+      input_file_pattern: "kbankqr22_YYYYMMDD.csv"
+      date_condition: TODAY-1
+      source_dest_mode: same
+      sftp_source:
+        host: cent-proxy1.vdc.co.th
+        port: 22
+        username: dsci_reconcile          
+  - name: merchant_e_payment
+    right2_source:
+      sftp_source_folder: /inbound/reconcile_data/merchant_e_payment
+      source_archive_folder: /inbound/reconcile_data/merchant_e_payment/archive
+      sftp_destination_folder: /data/inbound/sbm_merchant_e_payment_all
+      input_file_pattern: "*.xlsb"
+      source_dest_mode: different
+      sftp_source:
+        host: excinf.sabuytech.com
+        port: 2222
+        username: TE_SFTP_PROD
+        password: xR7zF98Qk6QanKDw
+      sftp_destination:
+        host: cent-proxy1.vdc.co.th
+        port: 22
+        username: dsci_reconcile             
+    right1_source:
+      sftp_source_folder: /inbound/reconcile_data/merchant_e_payment
+      source_archive_folder: /inbound/reconcile_data/merchant_e_payment/archive
+      sftp_destination_folder: /data/inbound/sbm_merchant_e_payment_all
+      input_file_pattern: "*.zip"
+      source_dest_mode: different
+      sftp_source:
+        host: excinf.sabuytech.com
+        port: 2222
+        username: TE_SFTP_PROD
+        password: xR7zF98Qk6QanKDw
+      sftp_destination:
+        host: cent-proxy1.vdc.co.th
+        port: 22
+        username: dsci_reconcile             
+  - name: recengine_report
+    right1_source:
+      sftp_source_folder: /home/tech_app_prod/python_bot/app/data/new_auto_reconcile/merchant_e_payment/report
+      sftp_destination_folder: /data/temporary_rec
+      input_file_pattern: "*_YYYYMMDD.csv"
+      date_condition: TODAY
+      source_dest_mode: different
+      sftp_source:
+        host: sbg-docker-etl.vdc.co.th
+        port: 22
+        username: tech_app_prod
+        password: ALz76}m6&XkO
+      sftp_destination:
+        host: cent-proxy1.vdc.co.th
+        port: 22
+        username: dsci_reconcile             
+  - name: speed_cod
+    right_source:
+      sftp_source_folder: /inbound/reconcile_data/COD_Speed
+      source_archive_folder: /inbound/reconcile_data/COD_Speed/archive
+      sftp_destination_folder: /data/inbound/spd_cod_txn
+      input_file_pattern: "*.xls"
+      source_dest_mode: different
+      sftp_source:
+        host: excinf.sabuytech.com
+        port: 2222
+        username: TE_SFTP_PROD
+        password: xR7zF98Qk6QanKDw
+      sftp_destination:
+        host: cent-proxy1.vdc.co.th
+        port: 22
+        username: dsci_reconcile
+    right1_source:
+      sftp_source_folder: /inbound/reconcile_data/COD_Speed
+      source_archive_folder: /inbound/reconcile_data/COD_Speed/archive
+      sftp_destination_folder: /data/inbound/spd_cod_txn
+      input_file_pattern: "*.xlsx"
+      source_dest_mode: different
+      sftp_source:
+        host: excinf.sabuytech.com
+        port: 2222
+        username: TE_SFTP_PROD
+        password: xR7zF98Qk6QanKDw
+      sftp_destination:
+        host: cent-proxy1.vdc.co.th
+        port: 22
+        username: dsci_reconcile
+  - name: local_bank_agent
+    left1_source:
+      sftp_source_folder: /home/tech_app_prod/python_bot/app/data/report_ra/Report_banking_rec
+      sftp_destination_folder: /data/inbound/local_banking_agent
+      input_file_pattern: "*_YYYYMMDD.csv"
+      date_condition: TODAY-1
+      source_dest_mode: different
+      sftp_source:
+        host: sbg-docker-etl.vdc.co.th
+        port: 22
+        username: tech_app_prod
+        password: ALz76}m6&XkO
+      sftp_destination:
+        host: cent-proxy1.vdc.co.th
+        port: 22
+        username: dsci_reconcile           
+

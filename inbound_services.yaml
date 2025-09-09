@@ -1,0 +1,315 @@
+services:
+  - name: merchant_e_payment
+    left_source:
+      type: csv
+      ##sftp_inbound_folder: ./inbound/reconcile_data/local_merchant_e_payment
+      ##sftp_archive_folder: ./inbound/reconcile_data/local_merchant_e_payment/archive
+      sftp_inbound_folder: /data/inbound/local_merchant_e_payment
+      sftp_archive_folder: /data/inbound/local_merchant_e_payment/archive
+      ##reconcile_input_folder: /wsol/app/data/new_auto_reconcile/merchant_e_payment
+      reconcile_input_folder: /wsol/rec_data/inbound/merchant_e_payment
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/merchant_e_payment/archive
+      input_file_pattern: Merchant_E_Payment_Daily-*.csv     
+      date_pattern: r"-(\d{12})\.csv$"
+      outbound_prefix: "local_merchant_epay"
+      csv_data_option: "local"
+      csv_header: True 
+      csv_header_columns: none     
+    left2_source:
+      type: csv
+      ##sftp_inbound_folder: ./inbound/reconcile_data/local_merchant_e_payment
+      ##sftp_archive_folder: ./inbound/reconcile_data/local_merchant_e_payment/archive
+      sftp_inbound_folder: /data/inbound/local_merchant_e_payment
+      sftp_archive_folder: /data/inbound/local_merchant_e_payment/archive
+      ###reconcile_input_folder: /wsol/app/data/new_auto_reconcile/merchant_e_payment
+      reconcile_input_folder: /wsol/rec_data/inbound/merchant_e_payment
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/merchant_e_payment/archive
+      input_file_pattern: Merchant_E_Payment_Daily_UnSuccess-*.csv     
+      date_pattern: r"-(\d{12})\.csv$"
+      outbound_prefix: "local_unsuccess_merchant_epay"
+      csv_data_option: "local"
+      csv_header: True 
+      csv_header_columns: none          
+    # right_source:
+    #   type: xlsb
+    #   ##sftp_inbound_folder: ./inbound/reconcile_data/merchant_e_payment 
+    #   ##sftp_archive_folder: ./inbound/reconcile_data/merchant_e_payment/archive
+    #   sftp_inbound_folder: /data/inbound/sbm_merchant_e_payment_all
+    #   sftp_archive_folder: /data/inbound/sbm_merchant_e_payment_all/archive
+    #   reconcile_input_folder: /wsol/rec_data/inbound/merchant_e_payment
+    #   local_archive_folder: /wsol/app/data/new_auto_reconcile/merchant_e_payment/archive
+    #   input_file_pattern: "Statement_SBM*.xlsb"      
+    #   date_pattern: r'(\d{2}\.\d{2}\.\d{2})'
+    #   sheets:
+    #     - name: "SCBALL_summary_4006"
+    #       processor: "scb2"
+    #     - name: "BBL 2283058242 QR "
+    #       processor: "bbl2"
+    right2_source:
+      type: csv
+      ##sftp_inbound_folder: ./inbound/reconcile_data/merchat_e_payment_wechat_alipay
+      ##sftp_archive_folder: ./inbound/reconcile_data/merchat_e_payment_wechat_alipay/archive
+      sftp_inbound_folder: /data/inbound/sbm_merchant_e_payment_all
+      sftp_archive_folder: /data/inbound/sbm_merchant_e_payment_all/archive      
+      reconcile_input_folder: /wsol/rec_data/inbound/merchant_e_payment
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/merchant_e_payment/archive
+      input_file_pattern: "2647610 - WeChat_AliPay*.*"      
+      zip_file: True
+      unzip_password: "1282777"
+      date_pattern: r"(\d{8})\.csv$"
+      outbound_prefix: "merchant_epay_wechat_alipay"
+      csv_data_option: "wechat_alipay"
+      csv_header: False
+      csv_header_columns: Merchant_ID,Store_name,TID,TXN_Date,TXN_Time,Product,Transaction_ID,Transaction_number,Approve_code,Payment,Amount,MDR,VAT,MDR%
+    right3_source:
+      type: csv
+      ##sftp_inbound_folder: ./inbound/reconcile_data/merchat_e_payment_wechat_alipay
+      ##sftp_archive_folder: ./inbound/reconcile_data/merchat_e_payment_wechat_alipay/archive
+      sftp_inbound_folder: /data/inbound/sbm_merchant_e_payment_all
+      sftp_archive_folder: /data/inbound/sbm_merchant_e_payment_all/archive      
+      reconcile_input_folder: /wsol/rec_data/inbound/merchant_e_payment
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/merchant_e_payment/archive
+      input_file_pattern: "truemoney324495378_*.txt"
+      date_pattern: r"(\d{8})\.txt$"
+      outbound_prefix: "merchant_epay_tmnwallet"
+      csv_data_option: "tmnwallet"
+      csv_delimiter: pipe
+      csv_skip_header: 2
+      csv_skip_footer: 1
+      csv_header: True
+    rightภ_source:
+      type: kbankqr22_csv
+      ##sftp_inbound_folder: ./inbound/reconcile_data/merchat_e_payment_wechat_alipay
+      ##sftp_archive_folder: ./inbound/reconcile_data/merchat_e_payment_wechat_alipay/archive
+      sftp_inbound_folder: /data/inbound/sbm_merchant_e_payment_all
+      sftp_archive_folder: /data/inbound/sbm_merchant_e_payment_all/archive      
+      reconcile_input_folder: /wsol/rec_data/inbound/merchant_e_payment
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/merchant_e_payment/archive
+      input_file_pattern: "kbankqr22_*.csv"
+      date_pattern: r"(\d{8})\.csv$"
+      outbound_prefix: "merchant_epay_kbankqr22"
+      csv_data_option: "kbankqr22"
+      csv_header: True      
+  - name: speed_cod
+    left_source:
+      type: csv 
+      sftp_inbound_folder: /data/inbound/local_spd_cod_daily/
+      sftp_archive_folder: /data/inbound/local_spd_cod_daily/archive
+      reconcile_input_folder: /wsol/rec_data/inbound/speed_cod
+      ocal_archive_folder: /wsol/app/data/new_auto_reconcile/speed_cod/archive
+      input_file_pattern: spd_cod_daily-*.csv     
+      date_pattern: r"-(\d{12})\.csv$"
+      outbound_prefix: "local_spd_cod"
+      csv_data_option: "spd_cod_local"
+      csv_header: True 
+      csv_header_columns: none
+    right_source:
+      type: spd_cod_thaipost_xls
+      ##sftp_inbound_folder: ./inbound/reconcile_data/merchant_e_payment 
+      ##sftp_archive_folder: ./inbound/reconcile_data/merchant_e_payment/archive
+      sftp_inbound_folder: /data/inbound/spd_cod_txn
+      sftp_archive_folder: /data/inbound/spd_cod_txn/archive
+      reconcile_input_folder: /wsol/rec_data/inbound/speed_cod
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/speed_cod/archive
+      input_file_pattern: "(10) 167. ข้อมูลโอนเงิน*.xls"
+      outbound_prefix: "speed_cod_thaipost"     
+      ##date_pattern: r'(\d{2}\.\d{2}\.\d{2})'
+    right2_source:
+      type: spd_cod_flash
+      sftp_inbound_folder: /data/inbound/spd_cod_txn
+      sftp_archive_folder: /data/inbound/spd_cod_txn/archive
+      reconcile_input_folder: /wsol/rec_data/inbound/speed_cod
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/speed_cod/archive
+      input_file_pattern: "*_CODRemittance.xlsx"
+      outbound_prefix: "speed_cod_flash" 
+      # date_pattern: r'(\d{8}_\d{8}_[A-Z0-9]+_CODRemittance)'
+    right3_source:
+      type: spd_cod_kerry_xls
+      sftp_inbound_folder: /data/inbound/spd_cod_txn
+      sftp_archive_folder: /data/inbound/spd_cod_txn/archive
+      reconcile_input_folder: /wsol/rec_data/inbound/speed_cod
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/speed_cod/archive
+      input_file_pattern: "Sabuy_COD*.xlsx"
+      outbound_prefix: "speed_cod_kex" 
+      # date_pattern: r'(\d{8}_\d{8}_[A-Z0-9]+_CODRemittance)'      
+  - name: speed_parcel   
+    left_source:
+      type: spd_txn
+      sftp_inbound_folder: /data/inbound/spd_txn
+      sftp_archive_folder: /data/inbound/spd_txn/archive
+      reconcile_input_folder: /wsol/rec_data/inbound/speed_txn
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/speed_txn/archive
+      input_file_pattern: "speed_daily_transaction_*.csv"
+      outbound_prefix: "local_speed_txn" 
+      # date_pattern: r'(\d{8}_\d{8}_[A-Z0-9]+_CODRemittance)'    
+    right2_source:
+      type: spd_flash
+      sftp_inbound_folder: /data/inbound/spd_txn
+      sftp_archive_folder: /data/inbound/spd_txn/archive
+      reconcile_input_folder: /wsol/rec_data/inbound/speed_txn
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/speed_txn/archive
+      input_file_pattern: "flash_transaction_*.csv"
+      outbound_prefix: "speed_txn_flash" 
+      # date_pattern: r'(\d{8}_\d{8}_[A-Z0-9]+_CODRemittance)'      
+  - name: banking_agent
+    bank_txn_source:
+      type: bank_agent_txn
+      sftp_inbound_folder: /data/inbound/local_banking_agent
+      sftp_archive_folder: /data/inbound/local_banking_agent/archive
+      reconcile_input_folder: /wsol/rec_data/inbound/banking_agent # Local folder to place input files
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/banking_agent/archive
+      input_file_pattern: "*.csv"
+      outbound_prefix: "local_bankagent"
+    ext_kbank_txn_source:
+      type: kbank_statement_csv
+      sftp_inbound_folder: /data/inbound/banking_agent
+      sftp_archive_folder: /data/inbound/banking_agent/archive
+      reconcile_input_folder: /wsol/rec_data/inbound/banking_agent # Local folder to place input files
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/banking_agent/archive
+      input_file_pattern: "kbankdeposit_daily-*.csv"
+      outbound_prefix: "bank_agent_kbank"
+    ext_baac_txn_source:
+      type: baac_statement_csv
+      sftp_inbound_folder: /data/inbound/banking_agent
+      sftp_archive_folder: /data/inbound/banking_agent/archive
+      reconcile_input_folder: /wsol/rec_data/inbound/banking_agent # Local folder to place input files
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/banking_agent/archive
+      input_file_pattern: "stm_baac_000820450374_*.csv"
+      outbound_prefix: "bank_agent_baac0374"    
+    ext_cimb_txn_source:
+      type: cimb_statement_excel
+      sftp_inbound_folder: /data/inbound/banking_agent
+      sftp_archive_folder: /data/inbound/banking_agent/archive
+      reconcile_input_folder: /wsol/rec_data/inbound/banking_agent # Local folder to place input files
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/banking_agent/archive
+      input_file_pattern: "cimbdeposit_daily-*.zip"
+      zip_file: True
+      outbound_prefix: "bank_agent_cimb"
+    ext_ktb_txn_source:
+      type: ktb_statement_excel
+      sftp_inbound_folder: /data/inbound/banking_agent
+      sftp_archive_folder: /data/inbound/banking_agent/archive
+      reconcile_input_folder: /wsol/rec_data/inbound/banking_agent # Local folder to place input files
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/banking_agent/archive
+      input_file_pattern: "stm_ktb_1736009796_*.xls"
+      outbound_prefix: "bank_agent_ktb9796"
+    ext_scb3953_txn_source:
+      type: scb_statement_csv
+      sftp_inbound_folder: /data/inbound/banking_agent
+      sftp_archive_folder: /data/inbound/banking_agent/archive
+      reconcile_input_folder: /wsol/rec_data/inbound/banking_agent # Local folder to place input files
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/banking_agent/archive
+      input_file_pattern: "stm_scb_1323023953_*.csv"
+      outbound_prefix: "bank_agent_scb3953"     
+    ext_scb4925_txn_source:
+      type: scb_statement_csv
+      sftp_inbound_folder: /data/inbound/banking_agent
+      sftp_archive_folder: /data/inbound/banking_agent/archive
+      reconcile_input_folder: /wsol/rec_data/inbound/banking_agent # Local folder to place input files
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/banking_agent/archive
+      input_file_pattern: "stm_scb_1323024925_*.csv"
+      outbound_prefix: "bank_agent_scb4925"         
+    ext_bay_txn_source:
+      type: bay_statement_excel
+      sftp_inbound_folder: /data/inbound/banking_agent
+      sftp_archive_folder: /data/inbound/banking_agent/archive
+      reconcile_input_folder: /wsol/rec_data/inbound/banking_agent # Local folder to place input files
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/banking_agent/archive
+      input_file_pattern: "stm_bay_3420014073_*.xls"
+      outbound_prefix: "bank_agent_bay4073"
+    ext_bbl_txn_source:
+      type: bbl_statement_excel
+      sftp_inbound_folder: /data/inbound/banking_agent
+      sftp_archive_folder: /data/inbound/banking_agent/archive
+      reconcile_input_folder: /wsol/rec_data/inbound/banking_agent # Local folder to place input files
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/banking_agent/archive
+      input_file_pattern: "stm_bbl_9150209378_*.xls"
+      outbound_prefix: "bank_agent_bbl9378" 
+    bank_statement_source:
+      type: bank_statement_excel
+      sftp_inbound_folder: /data/inbound/banking_agent
+      sftp_archive_folder: /data/inbound/banking_agent/archive
+      reconcile_input_folder: /wsol/rec_data/inbound/banking_agent # Local folder to place input Excel files
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/banking_agent/archive
+      input_file_pattern: "*.xlsx"
+      ###date_pattern_in_filename: r"(\d{8})\.xlsx" # Extracts DDMMYYYY from filename
+      sheets:
+        - name: "BAY-CA 4073"
+          skip_header: 0
+          skip_footer: 6
+          mapping:
+            source_date: "POSTINGDATE"
+            rccpkey: "TXN_REF"
+            rccamount: "DEBIT"
+          rccservice: "BAY-CA4073"
+        
+        - name: "KTB-CA 9796"
+          skip_header: 10
+          skip_footer: 0
+          mapping:
+            source_date: "Date"
+            rccpkey: "Description"
+            rccamount: "Amount"
+          rccservice: "KTB-CA9796"
+          filters:
+            - column: "Transaction Code"
+              value: "BADWT"
+              match_type: "exact"
+
+        - name: "BAAC-CA 0374"
+          skip_header: 8
+          skip_footer: 2
+          mapping:
+            source_date: "วันที่"
+            rccamount: "เงินออกบัญชี"
+            # rccpkey is generated from a template below
+          rccservice: "BAAC-CA0374"
+          rccpkey_template: "AGCWTR|{เงินออกบัญชี}"
+          filters:
+            # Assuming the filter 'AGCWTR' is in a column, let's call it 'รายการ'. 
+            # Please adjust the column name if it's different.
+            - column: "" #<-- ADJUST THIS COLUMN NAME
+              value: "AGCWTR"
+              match_type: "contains"
+
+        - name: "SCB-CA 3953"
+          skip_header: 1
+          skip_footer: 0
+          mapping:
+            # For aggregated sheets, mapping points to the columns *after* aggregation
+            source_date: "Date"
+            # rccamount is the result of aggregation
+            # rccpkey is generated from a template
+          rccservice: "SCB-CA3953"
+          rccpkey_template: "SCB-CA3953|{Transaction Code}|{rccamount}"
+          filters:
+            - column: "Transaction Code"
+              value: ["CW", "FE"]
+              match_type: "isin"
+          aggregation:
+            group_by: ["Date", "Transaction Code"]
+            agg_column: "Debit Amount"
+            agg_func: "sum"
+
+        - name: "BBL-SA 9378"
+          skip_header: 5
+          skip_footer: 0
+          mapping:
+            source_date: "Tran Date"
+            rccamount: "Debit"
+            # rccpkey is generated from a template
+          rccservice: "BBL-SA9378"
+          rccpkey_template: "BBL-SA9378|{rccamount}"
+
+sftp:
+  - name: excinf
+    server:
+      host: excinf.sabuytech.com
+      port: 2222
+      username: TE_SFTP_PROD
+      password: xR7zF98Qk6QanKDw
+  - name: PROD
+    server:
+      host: cent-proxy1.vdc.co.th
+      port: 22
+      username: dsci_reconcile
