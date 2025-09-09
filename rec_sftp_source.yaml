@@ -31,8 +31,8 @@ services:
       sftp_source:
         host: excinf.sabuytech.com
         port: 2222
-        username: TE_SFTP_PROD
-        password: xR7zF98Qk6QanKDw
+        username: TEST_SFTP_PROD
+        password: xxxx
       sftp_destination:
         host: cent-proxy1.vdc.co.th
         port: 22
@@ -46,8 +46,8 @@ services:
       sftp_source:
         host: excinf.sabuytech.com
         port: 2222
-        username: TE_SFTP_PROD
-        password: xR7zF98Qk6QanKDw
+        username: TEST_SFTP_PROD
+        password: xxxx
       sftp_destination:
         host: cent-proxy1.vdc.co.th
         port: 22
@@ -62,8 +62,8 @@ services:
       sftp_source:
         host: sbg-docker-etl.vdc.co.th
         port: 22
-        username: tech_app_prod
-        password: ALz76}m6&XkO
+        username: test_app_prod
+        password: xxx
       sftp_destination:
         host: cent-proxy1.vdc.co.th
         port: 22
@@ -78,8 +78,8 @@ services:
       sftp_source:
         host: excinf.sabuytech.com
         port: 2222
-        username: TE_SFTP_PROD
-        password: xR7zF98Qk6QanKDw
+        username: TEST_SFTP_PROD
+        password: xxx
       sftp_destination:
         host: cent-proxy1.vdc.co.th
         port: 22
@@ -93,8 +93,8 @@ services:
       sftp_source:
         host: excinf.sabuytech.com
         port: 2222
-        username: TE_SFTP_PROD
-        password: xR7zF98Qk6QanKDw
+        username: TEST_SFTP_PROD
+        password: xxxxx
       sftp_destination:
         host: cent-proxy1.vdc.co.th
         port: 22
@@ -109,10 +109,11 @@ services:
       sftp_source:
         host: sbg-docker-etl.vdc.co.th
         port: 22
-        username: tech_app_prod
-        password: ALz76}m6&XkO
+        username: test_app_prod
+        password: xxxx
       sftp_destination:
         host: cent-proxy1.vdc.co.th
         port: 22
         username: dsci_reconcile           
+
 
