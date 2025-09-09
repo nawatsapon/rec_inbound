@@ -300,16 +300,3 @@ services:
             # rccpkey is generated from a template
           rccservice: "BBL-SA9378"
           rccpkey_template: "BBL-SA9378|{rccamount}"
-
-sftp:
-  - name: excinf
-    server:
-      host: excinf.sabuytech.com
-      port: 2222
-      username: TE_SFTP_PROD
-      password: xR7zF98Qk6QanKDw
-  - name: PROD
-    server:
-      host: cent-proxy1.vdc.co.th
-      port: 22
-      username: dsci_reconcile
