@@ -296,6 +296,12 @@ class FlashProcessor(BaseProcessor):
 
         # Derive date for output file naming
         name = os.path.basename(file_path).rsplit(".", 1)[0]
+
+        ## check for source flash bulky ###
+        self.source_type = 'express'
+        if 'bulky' in name:
+            self.source_type = 'bulky'
+
         matches = re.findall(r'\d{8}', name)
         if matches:
             self.date = matches[-1]
@@ -328,10 +334,11 @@ class FlashProcessor(BaseProcessor):
             df["source_date"] = df["Pickup Date"].apply(DateConverter.convert_to_yyyymmdd)
             df["batch_date"] = self.date
             df["period"] = period_value  # attach extracted period
+            df["source_type_name"] = self.source_type ## add source_type_name to seperate express and bulky
 
             # Save output file
             output_prefix_filename = self.source_config.get("outbound_prefix", "speed_txn_flash")
-            output_filename = f"{output_prefix_filename}_{self.date}.csv"
+            output_filename = f"{output_prefix_filename}_{self.source_type}_{self.date}.csv"
             output_path = os.path.join(os.path.dirname(self.file_path), output_filename)
 
             self.save_as_csv(df, output_path)
@@ -398,6 +405,7 @@ class FlashCODProcessor(BaseProcessor):
 class SpeedTransactionProcessor(BaseProcessor):
     """Processor for SPD CSV files -> reconcile format.
     Pattern aligned with FlashProcessor.process()  :contentReference[oaicite:0]{index=0}
+    FLASH and POSTSABUY 
     """
 
     def __init__(self, file_path: str, source_config: Dict):
@@ -811,10 +819,11 @@ class KBankQR22Processor(BaseProcessor):
             self._add_converted_amount_column(df, "Amount", "rccamount")
             df['rccfee'] = "0.00"
 
+            df_filtered = df[df["rccservice"] != "unknown"]
             # Save the transformed data (including all original columns) to a new CSV file
             output_filename = f"{self.output_prefix}_{self.date}.csv"
             output_path = os.path.join(os.path.dirname(self.file_path), output_filename)
-            self.save_as_csv(df, output_path)
+            self.save_as_csv(df_filtered, output_path)
 
         except Exception as e:
             logger.error(f"Error processing file {self.file_path} with KBankQR22rocessor: {e}", exc_info=True)
@@ -844,6 +853,9 @@ class BankAgentTxnProcessor(BaseProcessor):
             logger.info(f"Processing file with BankAgentTxnProcessor: {self.file_path}")
 
             df = pd.read_csv(self.file_path, dtype=str)
+
+            #### filter out GSBDEPOSITONLINE because no need for current reconcile
+            df = df[df['order_service'] != 'GSBDEPOSITONLINE']
 
             key_map = {
                 'KTBDEPOSIT': 'order_ref7',
@@ -1469,8 +1481,8 @@ class KerryCODProcessor(BaseProcessor):
         try:
             logger.info(f"Processing file with KerryCODProcessor: {self.file_path}")
 
-            sheet_name = "COD"
-            df = pd.read_excel(self.file_path, sheet_name=sheet_name)
+            ##sheet_name = "COD" --> use sheet_name=1 instead for sheet position
+            df = pd.read_excel(self.file_path, sheet_name=1)
 
             # Create the new columns based on user's requirements
             df['rccpkey'] = df['Waybill No.']
@@ -1509,11 +1521,11 @@ class KerryDropOffProcessor(BaseProcessor):
         try:
             logger.info(f"Processing file with KerryDropOffProcessor: {self.file_path}")
 
-            sheet_name = "DROP-OFF"
-            df = pd.read_excel(self.file_path, sheet_name=sheet_name)
+            ###sheet_name = "图表1 202509011454" --> sheet 2 then sheet_name=1
+            df = pd.read_excel(self.file_path, sheet_name=1)
 
             # Create the new columns based on user's requirements
-            df['rccpkey'] = df['Cost Center']
+            df['rccpkey'] = df['consignment_no'].str.strip()
             df['rccamount'] = '0.00'
             df['rccfee'] = '0.00'
             df['rccservice'] = 'KEX-DO'
@@ -1521,7 +1533,7 @@ class KerryDropOffProcessor(BaseProcessor):
             df['batch_date'] = self.date
 
             # Save the transformed data to a new CSV file
-            output_prefix_filename = self.source_config.get("outbound_prefix", "speed_do_kex")
+            output_prefix_filename = self.source_config.get("outbound_prefix", "speed_kexdo")
             output_filename = f"{output_prefix_filename}_{self.date}.csv"
             output_path = os.path.join(os.path.dirname(self.file_path), output_filename)
             self.save_as_csv(df, output_path)
@@ -1529,6 +1541,227 @@ class KerryDropOffProcessor(BaseProcessor):
 
         except Exception as e:
             logger.error(f"Error processing file {self.file_path} with KerryDropOffProcessor: {e}", exc_info=True)
+            raise
+
+
+class SpeedKerryDropOffProcessor(BaseProcessor):
+    """Processor for SPD Kerry Drop-off CSV files -> reconcile format."""
+
+    def __init__(self, file_path: str, source_config: Dict):
+        super().__init__(file_path, source_config.get("date_pattern", ""))
+        self.source_config = source_config
+        # Derive date for output naming from filename (YYYYMMDD) or fallback to UTC today
+        name = os.path.basename(file_path).rsplit(".", 1)[0]
+        matches = re.findall(r"\d{8}", name)
+        if matches:
+            self.date = matches[-1]
+        else:
+            self.date = datetime.utcnow().strftime("%Y%m%d")
+            logger.warning(f"No YYYYMMDD date found in filename {file_path}. Using current date: {self.date}")
+
+    def process(self):
+        """
+        Transform SPD Kerry Drop-off CSV into reconcile file format:
+          - rccpkey   = tracking_code
+          - rccamount = "0.00"
+          - rccfee    = "0.00"
+          - source_date = trns_date (converted to YYYYMMDD)
+          - rccservice = 'KEX-DO'
+        Keeps all original columns and appends the reconcile columns.
+        """
+        try:
+            logger.info(f"Processing file with SpeedKerryDropOffProcessor: {self.file_path}")
+
+            # Read CSV as strings
+            df = pd.read_csv(self.file_path, dtype=str)
+
+            # Core reconcile fields
+            df["rccpkey"] = df["tracking_code"]
+            df["rccservice"] = "KEX-DO"
+            df["rccamount"] = "0.00"
+            df["rccfee"] = "0.00"
+            df["source_date"] = df["trns_date"].apply(DateConverter.convert_to_yyyymmdd)
+            df["batch_date"] = self.date
+
+            # Save output
+            output_prefix = self.source_config.get("outbound_prefix", "local_speed_kexdo")
+            output_filename = f"{output_prefix}_{self.date}.csv"
+            output_path = os.path.join(os.path.dirname(self.file_path), output_filename)
+            self.save_as_csv(df, output_path)
+            logger.info(f"Successfully processed and saved {self.file_path} to {output_path}")
+
+        except Exception as e:
+            logger.error(f"Error processing file {self.file_path} with SpeedKerryDropOffProcessor: {e}", exc_info=True)
+            raise
+
+
+class KerryInvoiceExternalProcessor(BaseProcessor):
+    """Processor for Kerry External Invoice Detail Excel files."""
+
+    def __init__(self, file_path: str, source_config: Dict):
+        super().__init__(file_path, source_config.get("date_pattern", ""))
+        self.source_config = source_config
+
+        name = f'20{os.path.basename(file_path).rsplit("_", 3)[2]}'
+        
+        match = re.search(r'(\d{8})', name)
+        if match:
+            self.date = name
+        else:
+            self.date = datetime.utcnow().strftime('%Y%m%d')
+            logger.warning(f"No YYYYMMDD date found in filename {file_path}. Using current date: {self.date}")        
+        
+        ###self.date = datetime.utcnow().strftime('%Y%m%d')
+
+    def process(self):
+        """
+        Processes the Kerry External Invoice Detail Excel file to transform it into the reconcile format.
+        """
+        try:
+            logger.info(f"Processing file with KerryInvoiceExternalProcessor: {self.file_path}")
+
+            # 1. Extract 'Customer ID:' from row 8 (index 7)
+            customer_id_df = pd.read_excel(self.file_path, header=None, skiprows=7, nrows=1, usecols=[2])
+            kex_account = customer_id_df.squeeze()
+            ##print(kex_account)
+
+            # 2. Read two-row headers (rows 12 and 13, indices 11 and 12)
+            #header_rows_df = pd.read_excel(self.file_path, header=None, skiprows=11, nrows=2)
+            
+            # Combine the two header rows to create meaningful column names
+            # Fill NaN in the first row with empty strings, then concatenate with the second row
+            # This assumes the primary header is in the first row and sub-headers are in the second.
+            # Adjust this logic if the header structure is different (e.g., second row fills blanks in first).
+            combined_headers = ['No.', 'Invoice Number', 'Consignment', 'Tax Type', 'Charge Type',
+                 'Charge Amount (VAT exclusive)', 'Discount Amount (VAT exclusive)', 'Net Amount (VAT exclusive)', 
+                 'Pickup Date', 'Delivery Date', 'Recipience Name', 'Status', 'WEIGHT Act.', 'Dim.', 'Chg.', 'Pkgs.', 
+                 'Ser. Type', 'Origin Province', 'Origin ZipCode', 'Origin Network Code', 'Destination Province', 'Destination ZipCode', 'Destination Network Code']
+            # for col_idx in range(len(header_rows_df.columns)):
+            #     header1 = str(header_rows_df.iloc[0, col_idx]).strip() if pd.notna(header_rows_df.iloc[0, col_idx]) else ''
+            #     header2 = str(header_rows_df.iloc[1, col_idx]).strip() if pd.notna(header_rows_df.iloc[1, col_idx]) else ''
+                
+            #     if header1 and header2 and header1 != header2: # If both exist and are different, combine
+            #         combined_headers.append(f"{header1} {header2}".strip())
+            #     elif header1: # If only first exists
+            #         combined_headers.append(header1)
+            #     elif header2: # If only second exists
+            #         combined_headers.append(header2)
+            #     else: # If both are empty/NaN
+            #         combined_headers.append(f"Unnamed: {col_idx}") # Placeholder for empty columns
+
+            # 3. Read the main data starting from row 14 (index 13) with no header
+            df = pd.read_excel(self.file_path, header=None, skiprows=13)
+            df.columns = combined_headers # Assign the combined headers
+            #print(combined_headers)
+
+            # Keep all original columns and add new columns
+            # Ensure column names match the combined headers
+            df['source_date'] = df['Pickup Date'].apply(lambda x: DateConverter.convert_to_yyyymmdd(x) if pd.notna(x) else self.date)
+            ##df['rccservice'] = 'KEX-INV-' + df['Charge Type'].astype(str).apply(lambda x: x.split(' ')[0] if pd.notna(x) else '')
+            df['rccservice'] = 'KEX-INV-' + df['Charge Type'].str.split().str[0].fillna('').str.upper()
+
+            self._add_converted_amount_column(df, "Charge Amount (VAT exclusive)", "rccamount")
+            df['rccpkey'] = df['Consignment'].astype(str).str.strip()
+            df['rccfee'] = '0.00'
+            df['batch_date'] = self.date
+            df['kex_account'] = kex_account
+
+            # Save output
+            output_prefix_filename = self.source_config.get("outbound_prefix", "speed_kex_inv")
+            output_filename = f"{output_prefix_filename}_{kex_account}_{self.date}.csv"
+            output_path = os.path.join(os.path.dirname(self.file_path), output_filename)
+            self.save_as_csv(df, output_path)
+            logger.info(f"Successfully processed and saved {self.file_path} to {output_path}")
+
+        except Exception as e:
+            logger.error(f"Error processing file {self.file_path} with KerryInvoiceExternalProcessor: {e}", exc_info=True)
+            raise
+
+
+class SpeedKerryExpressFreightProcessor(BaseProcessor):
+    """Processor for SPD Kerry Express Freight CSV files -> reconcile format."""
+
+    def __init__(self, file_path: str, source_config: Dict):
+        super().__init__(file_path, source_config.get("date_pattern", ""))
+        self.source_config = source_config
+        # Derive date for output naming from filename (YYYYMMDD) or fallback to UTC today
+        name = os.path.basename(file_path).rsplit(".", 1)[0]
+        matches = re.findall(r"\d{8}", name)
+        if matches:
+            self.date = matches[-1]
+        else:
+            self.date = datetime.utcnow().strftime("%Y%m%d")
+            logger.warning(f"No YYYYMMDD date found in filename {file_path}. Using current date: {self.date}")
+
+    def process(self):
+        """
+        Transforms SPD Kerry Express Freight CSV into reconcile file format.
+        """
+        try:
+            logger.info(f"Processing file with SpeedKerryExpressFreightProcessor: {self.file_path}")
+
+            df = pd.read_csv(self.file_path, dtype=str)
+
+            # Add reconcile columns
+            df["rccpkey"] = df["tracking_code"]
+            df["rccservice"] = "KEX-INV-FREIGHT"
+            self._add_converted_amount_column(df, "freight_charge", "rccamount")
+            df["rccfee"] = "0.00"
+            df["source_date"] = df["trns_date"].apply(DateConverter.convert_to_yyyymmdd)
+            df["batch_date"] = self.date
+
+            # Save output file
+            output_prefix = self.source_config.get("outbound_prefix", "local_speed_kex_inv_freight")
+            output_filename = f"{output_prefix}_{self.date}.csv"
+            output_path = os.path.join(os.path.dirname(self.file_path), output_filename)
+            self.save_as_csv(df, output_path)
+            logger.info(f"Successfully processed and saved {self.file_path} to {output_path}")
+
+        except Exception as e:
+            logger.error(f"Error processing file {self.file_path} with SpeedKerryExpressFreightProcessor: {e}", exc_info=True)
+            raise
+
+class SpeedKerryExpressFuelProcessor(BaseProcessor):
+    """Processor for SPD Kerry Express Fuel CSV files -> reconcile format."""
+
+    def __init__(self, file_path: str, source_config: Dict):
+        super().__init__(file_path, source_config.get("date_pattern", ""))
+        self.source_config = source_config
+        # Derive date for output naming from filename (YYYYMMDD) or fallback to UTC today
+        name = os.path.basename(file_path).rsplit(".", 1)[0]
+        matches = re.findall(r"\d{8}", name)
+        if matches:
+            self.date = matches[-1]
+        else:
+            self.date = datetime.utcnow().strftime("%Y%m%d")
+            logger.warning(f"No YYYYMMDD date found in filename {file_path}. Using current date: {self.date}")
+
+    def process(self):
+        """
+        Transforms SPD Kerry Express Fuel CSV into reconcile file format.
+        """
+        try:
+            logger.info(f"Processing file with SpeedKerryExpressFuelProcessor: {self.file_path}")
+
+            df = pd.read_csv(self.file_path, dtype=str)
+
+            # Add reconcile columns
+            df["rccpkey"] = df["tracking_code"]
+            df["rccservice"] = "KEX-INV-FUEL"
+            self._add_converted_amount_column(df, "fuel_surcharge", "rccamount")
+            df["rccfee"] = "0.00"
+            df["source_date"] = df["trns_date"].apply(DateConverter.convert_to_yyyymmdd)
+            df["batch_date"] = self.date
+
+            # Save output file
+            output_prefix = self.source_config.get("outbound_prefix", "local_speed_kex_inv_fuel")
+            output_filename = f"{output_prefix}_{self.date}.csv"
+            output_path = os.path.join(os.path.dirname(self.file_path), output_filename)
+            self.save_as_csv(df, output_path)
+            logger.info(f"Successfully processed and saved {self.file_path} to {output_path}")
+
+        except Exception as e:
+            logger.error(f"Error processing file {self.file_path} with SpeedKerryExpressFuelProcessor: {e}", exc_info=True)
             raise
 
 
@@ -1775,7 +2008,10 @@ class CSVProcessor(BaseProcessor):
             np.where(
             (df["payment_sof"].isin(['alipay-scb2', 'wechat-scb2'])) & (df["payment_origin"] == 'site-spo_food_court'),
             df["payment_sof"],
+            np.where( df["payment_terminal_id"].str.startswith("POS"), 'pos'
+            ,
             df["rccservice"] # 👈 keep original value if no match
+            )
            )
         )        
 
@@ -1861,7 +2097,7 @@ class CSVProcessor(BaseProcessor):
         df["rccservice"] = np.where(
             df["courier"].isin(['FLSESP', 'FLEB']), 'FLASH',
             np.where(
-            df["courier"].isin(['KEXEASY', 'KEXFRUIT', 'KERRY']), 'KEX',
+            df["courier"].isin(['KEXEASY', 'KEXFRUIT', 'KERRY', 'KEXF']), 'KEX',
             df["courier"] # 👈 keep original value if no match
             )
         )
@@ -1981,37 +2217,57 @@ def main(service_name: str = "merchant_e_payment") -> None:
                 file_path = os.path.join(source["reconcile_input_folder"], file_name)
                 processor = BankStatementProcessor(file_path, source)
                 processor.process()                    
-        elif source["type"]  == "spd_cod_thaipost_xls":  # New type for the new processor
+        elif source["type"]  == "spd_cod_thaipost_xls":  # Extermal Postsabuy COD source
             for file_name in files:
                 file_path = os.path.join(source["reconcile_input_folder"], file_name)
                 processor = PostsabuyCODProcessor(file_path, source)
-                processor.process()
+                processor.process()            
         elif source["type"] == "bank_agent_txn":
             for file_name in files:
                 file_path = os.path.join(source["reconcile_input_folder"], file_name)
                 processor = BankAgentTxnProcessor(file_path, source)
                 processor.process()           
-        elif source["type"] == "spd_cod_flash":  # New type for the new processor
+        elif source["type"] == "spd_cod_flash":  # External Flash COD source
             for file_name in files:
                 file_path = os.path.join(source["reconcile_input_folder"], file_name)
                 processor = FlashCODProcessor(file_path, source)
                 processor.process()       
-        elif source["type"] == "spd_cod_kerry_xls":  # New type for the new processor
+        elif source["type"] == "spd_cod_kerry_xls":  # External KEX COD source
             for file_name in files:
                 file_path = os.path.join(source["reconcile_input_folder"], file_name)
                 processor = KerryCODProcessor(file_path, source)
                 processor.process()       
-        elif source["type"] == "spd_do_kerry_xls":  # New type for the new processor
+        elif source["type"] == "spd_do_kerry_xls":  # External KEX drop-off sorurce
             for file_name in files:
                 file_path = os.path.join(source["reconcile_input_folder"], file_name)
                 processor = KerryDropOffProcessor(file_path, source)
                 processor.process()       
-        elif source["type"] == "spd_flash":  # New type for the new processor
+        elif source["type"] == "spd_kexdo_txn":  # Internal KEX drop-off sorurce
+            for file_name in files:
+                file_path = os.path.join(source["reconcile_input_folder"], file_name)
+                processor = SpeedKerryDropOffProcessor(file_path, source)
+                processor.process()       
+        elif source["type"] == "spd_kerry_inv_xlsx":  # External KEX Invoice source
+            for file_name in files:
+                file_path = os.path.join(source["reconcile_input_folder"], file_name)
+                processor = KerryInvoiceExternalProcessor(file_path, source)
+                processor.process()                     
+        elif source["type"] == "spd_kerry_inv_fuel":  # Internal KEX Invoice  Fuel source
+            for file_name in files:
+                file_path = os.path.join(source["reconcile_input_folder"], file_name)
+                processor = SpeedKerryExpressFuelProcessor(file_path, source)
+                processor.process()
+        elif source["type"] == "spd_kerry_inv_freight":  # Internal KEX Invoice  Freight source
+            for file_name in files:
+                file_path = os.path.join(source["reconcile_input_folder"], file_name)
+                processor = SpeedKerryExpressFreightProcessor(file_path, source)
+                processor.process()                      
+        elif source["type"] == "spd_flash":  # Internal Flash COD parcel source
             for file_name in files:
                 file_path = os.path.join(source["reconcile_input_folder"], file_name)
                 processor = FlashProcessor(file_path, source)
                 processor.process()
-        elif source["type"] == "spd_txn":  # New type for the new processor
+        elif source["type"] == "spd_txn":  # Internal speed Flash source
             for file_name in files:
                 file_path = os.path.join(source["reconcile_input_folder"], file_name)
                 processor = SpeedTransactionProcessor(file_path, source)

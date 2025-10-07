@@ -31,8 +31,8 @@ services:
       sftp_source:
         host: excinf.sabuytech.com
         port: 2222
-        username: TEST_SFTP_PROD
-        password: xxxx
+        username: TE_SFTP_PROD
+        password: xR7zF98Qk6QanKDw
       sftp_destination:
         host: cent-proxy1.vdc.co.th
         port: 22
@@ -46,8 +46,8 @@ services:
       sftp_source:
         host: excinf.sabuytech.com
         port: 2222
-        username: TEST_SFTP_PROD
-        password: xxxx
+        username: TE_SFTP_PROD
+        password: xR7zF98Qk6QanKDw
       sftp_destination:
         host: cent-proxy1.vdc.co.th
         port: 22
@@ -62,8 +62,8 @@ services:
       sftp_source:
         host: sbg-docker-etl.vdc.co.th
         port: 22
-        username: test_app_prod
-        password: xxx
+        username: tech_app_prod
+        password: ALz76}m6&XkO
       sftp_destination:
         host: cent-proxy1.vdc.co.th
         port: 22
@@ -78,8 +78,8 @@ services:
       sftp_source:
         host: excinf.sabuytech.com
         port: 2222
-        username: TEST_SFTP_PROD
-        password: xxx
+        username: TE_SFTP_PROD
+        password: xR7zF98Qk6QanKDw
       sftp_destination:
         host: cent-proxy1.vdc.co.th
         port: 22
@@ -93,8 +93,8 @@ services:
       sftp_source:
         host: excinf.sabuytech.com
         port: 2222
-        username: TEST_SFTP_PROD
-        password: xxxxx
+        username: TE_SFTP_PROD
+        password: xR7zF98Qk6QanKDw
       sftp_destination:
         host: cent-proxy1.vdc.co.th
         port: 22
@@ -102,6 +102,7 @@ services:
   - name: local_bank_agent
     left1_source:
       sftp_source_folder: /home/tech_app_prod/python_bot/app/data/report_ra/Report_banking_rec
+      source_archive_folder: /home/tech_app_prod/python_bot/app/data/report_ra/Report_banking_rec/archive
       sftp_destination_folder: /data/inbound/local_banking_agent
       input_file_pattern: "*_YYYYMMDD.csv"
       date_condition: TODAY-1
@@ -109,11 +110,74 @@ services:
       sftp_source:
         host: sbg-docker-etl.vdc.co.th
         port: 22
-        username: test_app_prod
-        password: xxxx
+        username: tech_app_prod
+        password: ALz76}m6&XkO
       sftp_destination:
         host: cent-proxy1.vdc.co.th
         port: 22
-        username: dsci_reconcile           
-
-
+        username: dsci_reconcile 
+  - name: speed_parcel
+    right_source:
+      sftp_source_folder: /inbound/reconcile_data/Speed_Parcel
+      source_archive_folder: /inbound/reconcile_data/Speed_Parcel/archive
+      sftp_destination_folder: /data/inbound/spd_txn
+      input_file_pattern: "*.xlsx"
+      source_dest_mode: different
+      sftp_source:
+        host: excinf.sabuytech.com
+        port: 2222
+        username: TE_SFTP_PROD
+        password: xR7zF98Qk6QanKDw
+      sftp_destination:
+        host: cent-proxy1.vdc.co.th
+        port: 22
+        username: dsci_reconcile
+    right2_source:
+      sftp_source_folder: /inbound/reconcile_data/Speed_Parcel
+      source_archive_folder: /inbound/reconcile_data/Speed_Parcel/archive
+      sftp_destination_folder: /data/inbound/spd_txn
+      input_file_pattern: "*.csv"
+      source_dest_mode: different
+      sftp_source:
+        host: excinf.sabuytech.com
+        port: 2222
+        username: TE_SFTP_PROD
+        password: xR7zF98Qk6QanKDw
+      sftp_destination:
+        host: cent-proxy1.vdc.co.th
+        port: 22
+        username: dsci_reconcile        
+  - name: local_speed_parcel
+    left1_source:
+      sftp_source_folder: /home/tech_app_prod/python_bot/app/data/report_ra/Report_prompt_speed
+      source_archive_folder: /home/tech_app_prod/python_bot/app/data/report_ra/Report_prompt_speed/archive
+      sftp_destination_folder: /data/inbound/spd_txn
+      input_file_pattern: "sp*.csv"
+      ##input_file_pattern: "*_YYYYMMDD.csv"
+      ###date_condition: TODAY-1
+      source_dest_mode: different
+      sftp_source:
+        host: sbg-docker-etl.vdc.co.th
+        port: 22
+        username: tech_app_prod
+        password: ALz76}m6&XkO
+      sftp_destination:
+        host: cent-proxy1.vdc.co.th
+        port: 22
+        username: dsci_reconcile
+  - name: resync_thaiqr
+    left1_source:
+      sftp_source_folder: /home/tech_app_prod/python_bot/app/extract_sbs_tescofc_thaiqr/data/archive
+      sftp_destination_folder: /data/inbound/sbs_tescofc_thaiqr
+      input_file_pattern: "sbs_tescofc_thaiqr_YYYYMMDD.csv"
+      date_condition: TODAY-1
+      source_dest_mode: different
+      sftp_source:
+        host: sbg-docker-etl.vdc.co.th
+        port: 22
+        username: tech_app_prod
+        password: ALz76}m6&XkO
+      sftp_destination:
+        host: cent-proxy1.vdc.co.th
+        port: 22
+        username: dsci_reconcile         

@@ -111,7 +111,7 @@ services:
       sftp_archive_folder: /data/inbound/spd_cod_txn/archive
       reconcile_input_folder: /wsol/rec_data/inbound/speed_cod
       local_archive_folder: /wsol/app/data/new_auto_reconcile/speed_cod/archive
-      input_file_pattern: "(10) 167. ข้อมูลโอนเงิน*.xls"
+      input_file_pattern: "*พร้อม สปีด คอมเมิร์ช*โอนเงินครั้งที่*.xls"
       outbound_prefix: "speed_cod_thaipost"     
       ##date_pattern: r'(\d{2}\.\d{2}\.\d{2})'
     right2_source:
@@ -129,7 +129,7 @@ services:
       sftp_archive_folder: /data/inbound/spd_cod_txn/archive
       reconcile_input_folder: /wsol/rec_data/inbound/speed_cod
       local_archive_folder: /wsol/app/data/new_auto_reconcile/speed_cod/archive
-      input_file_pattern: "Sabuy_COD*.xlsx"
+      input_file_pattern: "COD_PROMPT_SPEED_*.xlsx"
       outbound_prefix: "speed_cod_kex" 
       # date_pattern: r'(\d{8}_\d{8}_[A-Z0-9]+_CODRemittance)'      
   - name: speed_parcel   
@@ -150,7 +150,49 @@ services:
       local_archive_folder: /wsol/app/data/new_auto_reconcile/speed_txn/archive
       input_file_pattern: "flash_transaction_*.csv"
       outbound_prefix: "speed_txn_flash" 
-      # date_pattern: r'(\d{8}_\d{8}_[A-Z0-9]+_CODRemittance)'      
+      # date_pattern: r'(\d{8}_\d{8}_[A-Z0-9]+_CODRemittance)'    
+  - name: speed_kexdo
+    left_source:
+      type: spd_kexdo_txn
+      sftp_inbound_folder: /data/inbound/spd_txn
+      sftp_archive_folder: /data/inbound/spd_txn/archive
+      reconcile_input_folder: /wsol/rec_data/inbound/speed_txn
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/speed_txn/archive
+      input_file_pattern: "spd_kerry_dropoff_*.csv"
+      outbound_prefix: "local_speed_kexdo_txn"
+    right_source:
+      type: spd_do_kerry_xls
+      sftp_inbound_folder: /data/inbound/spd_txn
+      sftp_archive_folder: /data/inbound/spd_txn/archive
+      reconcile_input_folder: /wsol/rec_data/inbound/speed_txn
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/speed_txn/archive
+      input_file_pattern: "Drop*.xlsx"
+      outbound_prefix: "speed_kexdo_txn"           
+  - name: speed_kex_inv
+    left_source:
+      type: spd_kerry_inv_freight
+      sftp_inbound_folder: /data/inbound/spd_txn
+      sftp_archive_folder: /data/inbound/spd_txn/archive
+      reconcile_input_folder: /wsol/rec_data/inbound/speed_txn
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/speed_txn/archive
+      input_file_pattern: "spd_kerry_express_freight_*.csv"
+      outbound_prefix: "local_speed_kex_inv_freight"
+    left2_source:
+      type: spd_kerry_inv_fuel
+      sftp_inbound_folder: /data/inbound/spd_txn
+      sftp_archive_folder: /data/inbound/spd_txn/archive
+      reconcile_input_folder: /wsol/rec_data/inbound/speed_txn
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/speed_txn/archive
+      input_file_pattern: "spd_kerry_express_fuel_*.csv"
+      outbound_prefix: "local_speed_kex_inv_fuel"      
+    right_source:
+      type: spd_kerry_inv_xlsx
+      sftp_inbound_folder: /data/inbound/spd_txn
+      sftp_archive_folder: /data/inbound/spd_txn/archive
+      reconcile_input_folder: /wsol/rec_data/inbound/speed_txn
+      local_archive_folder: /wsol/app/data/new_auto_reconcile/speed_txn/archive
+      input_file_pattern: "Invoice*.xlsx"
+      outbound_prefix: "speed_kex_inv"              
   - name: banking_agent
     bank_txn_source:
       type: bank_agent_txn
@@ -300,3 +342,16 @@ services:
             # rccpkey is generated from a template
           rccservice: "BBL-SA9378"
           rccpkey_template: "BBL-SA9378|{rccamount}"
+
+sftp:
+  - name: excinf
+    server:
+      host: excinf.sabuytech.com
+      port: 2222
+      username: TE_SFTP_PROD
+      password: xR7zF98Qk6QanKDw
+  - name: PROD
+    server:
+      host: cent-proxy1.vdc.co.th
+      port: 22
+      username: dsci_reconcile
